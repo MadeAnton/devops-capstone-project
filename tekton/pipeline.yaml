@@ -11,11 +11,13 @@ metadata:
 spec:
   workspaces:
     - name: pipeline-workspace
+
   params:
     - name: repo-url
     - name: branch
       default: main
     - name: build-image
+
   tasks:
     - name: init
       workspaces:
@@ -85,3 +87,22 @@ spec:
           value: "$(params.build-image)"
         - name: CONTEXT
           value: "."
+
+    - name: deploy
+      runAfter:
+        - build
+      workspaces:
+        - name: manifest-dir
+          workspace: pipeline-workspace
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      params:
+        - name: SCRIPT
+          value: |
+            echo "Updating manifest..."
+            sed -i "s|IMAGE_NAME_HERE|$(params.build-image)|g" deploy/deployment.yaml
+            cat deploy/deployment.yaml
+            echo "Deploying to OpenShift..."
+            oc apply -f deploy/
+            oc get pods -l app=accounts
