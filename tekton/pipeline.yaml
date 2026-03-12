@@ -24,6 +24,8 @@ spec:
         name: cleanup
 
     - name: clone
+      runAfter:
+        - init
       workspaces:
         - name: output
           workspace: pipeline-workspace
@@ -34,10 +36,10 @@ spec:
           value: $(params.repo-url)
         - name: revision
           value: $(params.branch)
-      runAfter:
-        - init
 
     - name: lint
+      runAfter:
+        - clone
       workspaces:
         - name: source
           workspace: pipeline-workspace
@@ -47,11 +49,15 @@ spec:
         - name: image
           value: "python:3.9-slim"
         - name: args
-          value: ["--count", "--max-complexity=10", "--max-line-length=127", "--statistics"]
-      runAfter:
-        - clone
+          value:
+            - "--count"
+            - "--max-complexity=10"
+            - "--max-line-length=127"
+            - "--statistics"
 
     - name: tests
+      runAfter:
+        - clone
       workspaces:
         - name: source
           workspace: pipeline-workspace
@@ -62,5 +68,3 @@ spec:
           value: "sqlite:///test.db"
         - name: args
           value: "-v --with-spec --spec-color"
-      runAfter:
-        - clone
